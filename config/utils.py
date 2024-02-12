@@ -307,13 +307,7 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
         ax[1].set_ylabel('\nVariation\n')
 
         plt.suptitle(f'\nChanges for {l} in {group} {p}\n'.title())
-        
-        save_path = f'/workspaces/fitness-tracker/reports/figures/{str.capitalize(group)} {p} - {l.title()}.png'
-        
-        if os.path.exists(save_path):
-          os.remove(save_path)
-        
-        plt.savefig(save_path, dpi=300)
+                
         run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
         
         if show:
