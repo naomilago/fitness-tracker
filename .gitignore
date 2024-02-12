@@ -23,6 +23,16 @@ var/
 .installed.cfg
 *.egg
 
+# Dynaconf secrets
+.secrets.toml
+config/.secrets.toml
+
+# Secrets
+.secrets.json
+
+# MyPy Configuration
+mypy.ini
+
 # PyInstaller
 #  Usually these files are written by a python script from a template
 #  before PyInstaller builds the exe, so as to inject date/other infos into it.
@@ -88,3 +98,6 @@ target/
 
 # Mypy cache
 .mypy_cache/
+
+# Ignore dynaconf secret files
+.secrets.*

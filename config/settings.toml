@@ -1,0 +1,8 @@
+[people.developer]
+name = 'Naomi Lago'
+role = 'Data Scientist'
+
+[project]
+name = 'Fitness Tracker'
+description = "This is a Data Science project that aims to enhance my skills on executing a more complete common workflow, so I'll be creating Python scripts to process, visualize, and model accelerometer and gyroscope data in order to use Machine Learning to classify barbell exercises and count repetitions."
+release = 2023
