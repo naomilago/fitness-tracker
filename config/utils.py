@@ -1,10 +1,14 @@
 import matplotlib.pyplot as plt
+from neptune.types import File
+from datetime import datetime
 from loguru import logger
 import matplotlib as mpl
+from io import StringIO
 import seaborn as sns
 from glob import glob
 from typing import *
 import pandas as pd
+import contextlib
 import requests
 import neptune
 import json
@@ -22,7 +26,7 @@ color_pal = sns.color_palette()
 # Function to fetch API keys from a secret manager (Infisical)
 # - Used for experiment tracking on Neptune
 
-def secret_fetcher(query: str, env: str = 'dev', secrets_path: str = '/workspaces/fitness-tracker/.secrets.json', verbose: bool = True) -> Union[Tuple[str, str], None]:
+def secret_fetcher(query: str, env: str = 'dev', secrets_path: str = '/workspaces/fitness-tracker/.secrets.json', verbose: bool = True) -> Union[Tuple[str, str]]:
   
   '''
     Fetches a secret value from the Infisical (an encrypted platform for managing secrets) based on the provided query.
@@ -46,8 +50,7 @@ def secret_fetcher(query: str, env: str = 'dev', secrets_path: str = '/workspace
   '''
   
   if query == '':
-    logger.error('Please, insert a valid query!')
-    return None
+    raise Exception('Please, insert a valid query!')
   
   with open(secrets_path) as f:
     secrets = json.load(f)
@@ -226,6 +229,55 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
       Example: When setting to production, it's strongly recommended in order to keep track of everything.
   '''
   
+  try:
+    _, api_token = secret_fetcher(query='NEPTUNE', env='dev', verbose=verbose)
+  except TypeError as e:
+    if verbose:
+      logger.error('Internal error, review your query!')
+      return None
+    else:
+      return None
+  
+  id_ = datetime.now().strftime("%b %d, %Y @ %H:%M:%S")
+  
+  if verbose:
+    run = neptune.init_run(
+      custom_run_id='Axis Variation ' + datetime.now().strftime("%H:%M:%S"),
+      name='Axis variations per participants within labels',
+      description='Registering the visualizations on the axis of both sensors.',
+      tags=['Report', 'Frequencies', 'Line'],
+      source_files=[
+        '/workspaces/fitness-tracker/config.utils.py',
+        '/workspaces/fitness-tracker/visualization/visualize.py'
+      ],
+      git_ref=True,
+      project='Insightfully/Fitness-Tracker',
+      capture_hardware_metrics=False,
+      api_token=api_token,
+      mode='async',
+    )
+  else:
+    _ = StringIO()
+    
+    with contextlib.redirect_stdout(_):
+      run = neptune.init_run(
+      custom_run_id='Axis Variation ' + datetime.now().strftime("%H:%M:%S"),
+        name='Axis variations per participants within labels',
+        description='Registering the visualizations on the axis of both sensors.',
+        tags=['Report', 'Frequencies', 'Line'],
+        source_files=[
+          '/workspaces/fitness-tracker/config.utils.py',
+          '/workspaces/fitness-tracker/visualization/visualize.py'
+        ],
+        git_ref=True,
+        project='Insightfully/Fitness-Tracker',
+        capture_hardware_metrics=False,
+        capture_stderr=False,
+        capture_stdout=False,
+        api_token=api_token,
+        mode='async',
+      )
+  
   if verbose:
     logger.info('Accessing the groups and subgroups...')
   
@@ -262,11 +314,14 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
           os.remove(save_path)
         
         plt.savefig(save_path, dpi=300)
+        run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
         
         if show:
           plt.show()
         
         plt.close()
+        
+  run.stop()
         
   if verbose:
     logger.success('The visualizations were made and successfully exported 🎉')
