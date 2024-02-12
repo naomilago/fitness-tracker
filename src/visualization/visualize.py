@@ -11,5 +11,3 @@ df = pd.read_pickle('/workspaces/fitness-tracker/data/interim/01_processed_data.
 # - For each participant within each label
 
 axis_plots(df=df, group='participant', subgroup='label', show=False, verbose=True)  
-
-from config.config import *
