@@ -1,3 +1,5 @@
+from sklearn.neighbors import LocalOutlierFactor
+from config.config import settings
 import matplotlib.pyplot as plt
 from neptune.types import File
 from datetime import datetime
@@ -11,17 +13,10 @@ import pandas as pd
 import contextlib
 import requests
 import neptune
+import scipy
 import json
+import math
 import os
-
-# Visualization settings
-
-plt.style.use('dark_background')
-plt.rcParams['grid.color'] = '#212121'
-plt.rcParams['figure.max_open_warning'] = 30
-
-sns.set_palette("rocket_r")
-color_pal = sns.color_palette()
 
 # Function to fetch API keys from a secret manager (Infisical)
 # - Used for experiment tracking on Neptune
@@ -107,7 +102,7 @@ def get_raw_data_path(sensor_type: str) -> str:
     Get the data path based on the preference (whether absolute or relative).
 
     Parameters:
-    - sensor_type (str): 
+    - sensor_type (str, required): 
       A string referring to the type of sensor.
         Options: 'abs' for absolute path or 'rel' for relative path.
 
@@ -131,7 +126,7 @@ def data_reader(files:  Union[List[str], Tuple[str], Set[str]], verbose: bool = 
   It also extracts and handles relevant features from the file names. 
     
   Parameters:
-  - files (Union[List[str], Tuple[str], Set[str]]):
+  - files (Union[List[str], Tuple[str], Set[str]], required):
     A collection of paths to data files in CSV format.
   - verbose (bool, optional):
       A boolean variable to indicate whether showing logs or not (default is `True`).
@@ -203,30 +198,45 @@ def data_reader(files:  Union[List[str], Tuple[str], Set[str]], verbose: bool = 
 # Function to subplot the X, Y, Z axis for each group within each subgroup
 # - Usually used for each participant within each label
 
-def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: bool = False, verbose: bool = True) -> None:
+def axis_plots(
+    df: pd.core.frame.DataFrame, 
+    group: str, 
+    subgroup: str, 
+    dark_theme: bool = False,
+    color_palette: str = 'viridis_r',
+    show: bool = False, 
+    verbose: bool = True
+  ) -> None:
   
   '''
   Generates subplots from a DataFrame with both a group and subgroup defined and saves them in a specific path.
   
   Parameters:
-  - df (pd.core.frame.DataFrane):
+  - df (pd.core.frame.DataFrane, required):
     A Pandas DataFrame to extract the features to plot with.
     
-  - group (str):
+  - group (str, required):
     A string containing the group inteded to use.
       Example: 'participant'.
     
-  - subgroup (str):
+  - subgroup (str, required):
     A string containing the subgroup intended to use.
       Example: 'label'.
     
-  - show (bool):
-    A boolean variable to indicate whether run `plt.show()` or not.
+  - show (bool, optional):
+    A boolean variable to indicate whether run `plt.show()` or not (default is `False`).
       Example: When using a Jupyter based notebook, you might want to include this option.
       
-  - verbose (bool):
-    A boolean variable to indicate whether showing logs or not.
+  - verbose (bool, optional):
+    A boolean variable to indicate whether showing logs or not (default is `True`).
       Example: When setting to production, it's strongly recommended in order to keep track of everything.
+  
+  - dark_theme (bool, optional):
+    A boolean variable to indicate whether plotting in dark theme or not (default is `False`).
+    
+  - color_pallete (str, optional):
+    A string containing the color palette to use (default is `viridis_r`).
+      Example: `rocket_r`.
   '''
   
   try:
@@ -237,6 +247,11 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
       return None
     else:
       return None
+    
+  project_path = settings.project.experiment
+  project = neptune.init_project(project=project_path, mode='async', api_token=api_token)
+  
+  project['general/brief'] = settings.project.brief
   
   id_ = datetime.now().strftime("%b %d, %Y @ %H:%M:%S")
   
@@ -251,7 +266,7 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
         '/workspaces/fitness-tracker/visualization/visualize.py'
       ],
       git_ref=True,
-      project='Insightfully/Fitness-Tracker',
+      project=project_path,
       capture_hardware_metrics=False,
       api_token=api_token,
       mode='async',
@@ -270,7 +285,7 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
           '/workspaces/fitness-tracker/visualization/visualize.py'
         ],
         git_ref=True,
-        project='Insightfully/Fitness-Tracker',
+        project=project_path,
         capture_hardware_metrics=False,
         capture_stderr=False,
         capture_stdout=False,
@@ -280,6 +295,13 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
   
   if verbose:
     logger.info('Accessing the groups and subgroups...')
+    
+  if dark_theme:
+    plt.style.use('dark_background')
+    plt.rcParams['grid.color'] = '#212121'
+    plt.rcParams['figure.max_open_warning'] = 30
+  
+  sns.set_palette(color_palette)
   
   group_ = sorted(df[f'{group}'].unique())
   subgroup_ = df[f'{subgroup}'].unique()
@@ -309,6 +331,7 @@ def axis_plots(df: pd.core.frame.DataFrame, group: str, subgroup: str, show: boo
         plt.suptitle(f'\nChanges for {l} in {group} {p}\n'.title())
                 
         run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+        project[f'reports/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
         
         if show:
           plt.show()
