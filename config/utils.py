@@ -203,7 +203,7 @@ def axis_plots(
     group: str, 
     subgroup: str, 
     dark_theme: bool = False,
-    color_palette: str = 'viridis_r',
+    color_palette: str = 'dark',
     show: bool = False, 
     verbose: bool = True
   ) -> None:
@@ -262,39 +262,43 @@ def axis_plots(
       description='Registering the visualizations on the axis of both sensors.',
       tags=['Report', 'Frequencies', 'Line'],
       source_files=[
-        '/workspaces/fitness-tracker/config.utils.py',
-        '/workspaces/fitness-tracker/visualization/visualize.py'
+        '/workspaces/fitness-tracker/config/utils.py',
+        '/workspaces/fitness-tracker/src/visualization/visualize.py'
       ],
       git_ref=True,
       project=project_path,
-      capture_hardware_metrics=False,
       api_token=api_token,
       mode='async',
     )
   else:
     _ = StringIO()
     
+    logger.disable('')
+        
     with contextlib.redirect_stdout(_):
-      run = neptune.init_run(
-      custom_run_id='Axis Variation ' + datetime.now().strftime("%H:%M:%S"),
-        name='Axis variations per participants within labels',
-        description='Registering the visualizations on the axis of both sensors.',
-        tags=['Report', 'Frequencies', 'Line'],
-        source_files=[
-          '/workspaces/fitness-tracker/config.utils.py',
-          '/workspaces/fitness-tracker/visualization/visualize.py'
-        ],
-        git_ref=True,
-        project=project_path,
-        capture_hardware_metrics=False,
-        capture_stderr=False,
-        capture_stdout=False,
-        api_token=api_token,
-        mode='async',
-      )
+      with contextlib.redirect_stderr(_):
+        with contextlib.redirect_stdout(_):
+          run = neptune.init_run(
+          custom_run_id='Axis Variation ' + datetime.now().strftime("%H:%M:%S"),
+            name='Axis variations per participants within labels',
+            description='Registering the visualizations on the axis of both sensors.',
+            tags=['Report', 'Frequencies', 'Line'],
+            source_files=[
+              '/workspaces/fitness-tracker/config/utils.py',
+              '/workspaces/fitness-tracker/src/visualization/visualize.py'
+            ],
+            git_ref=True,
+            project=project_path,
+            api_token=api_token,
+            mode='async',
+          )
+          
+  logger.enable('')
   
   if verbose:
     logger.info('Accessing the groups and subgroups...')
+    
+  plt.rcParams['figure.dpi'] = 300  
     
   if dark_theme:
     plt.style.use('dark_background')
@@ -329,9 +333,22 @@ def axis_plots(
         ax[1].set_ylabel('\nVariation\n')
 
         plt.suptitle(f'\nChanges for {l} in {group} {p}\n'.title())
-                
-        run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
-        project[f'reports/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+            
+        if verbose:    
+          run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+          project[f'reports/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+        else:
+          _ = StringIO()
+    
+          logger.disable('')
+              
+          with contextlib.redirect_stdout(_):
+            with contextlib.redirect_stderr(_):
+              with contextlib.redirect_stdout(_):
+                run[f'reports/figures/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+                project[f'reports/axis/{str.capitalize(group)} {p} - {l.title()}'].upload(fig)
+        
+        logger.enable('')
         
         if show:
           plt.show()
