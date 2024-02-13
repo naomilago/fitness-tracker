@@ -26,22 +26,28 @@ def secret_fetcher(query: str, env: str = 'dev', secrets_path: str = '/workspace
   '''
     Fetches a secret value from the Infisical (an encrypted platform for managing secrets) based on the provided query.
     
-    Parameters:
+    PARAMETERS:
+    
     - query (str, required): 
       A string referring to the identifier for the secret to retrieve.
+      
     - env (str, required):
       A string referring to the environment to fetch the secret from (default is `dev`).
+      
     - secrets_path (str, opional):
       A string referring to the file path to a JSON file containing API secrets (default is `/workspaces/fitness-tracker/.secrets.json`).
+      
     - verbose (bool, optional):
       A boolean variable to indicate whether showing logs or not (default is `True`).
         Example: When setting to production, it's strongly recommended in order to keep track of everything.
   
-    Returns:
+    RETURNS:
+    
     - Union[Tuple[str, str], None]: A tuple containing the secret key and value if successful, or None in case of an error.
     
-    Note:
-      The function performs a POST request to acquire the API access key and then a GET request to fetch the desired secret.
+    NOTES:
+    
+    - The function performs a POST request to acquire the API access key and then a GET request to fetch the desired secret.
   '''
   
   if query == '':
@@ -101,12 +107,14 @@ def get_raw_data_path(sensor_type: str) -> str:
     '''
     Get the data path based on the preference (whether absolute or relative).
 
-    Parameters:
+    PARAMETERS:
+    
     - sensor_type (str, required): 
       A string referring to the type of sensor.
         Options: 'abs' for absolute path or 'rel' for relative path.
 
-    Returns:
+    RETURNS:
+    
     - str: Data path preferred.
     '''
     
@@ -125,20 +133,24 @@ def data_reader(files:  Union[List[str], Tuple[str], Set[str]], verbose: bool = 
   Reads the data files within a path and returns two DataFrames referring to the type of measurement made.
   It also extracts and handles relevant features from the file names. 
     
-  Parameters:
+  PARAMETERS:
+  
   - files (Union[List[str], Tuple[str], Set[str]], required):
     A collection of paths to data files in CSV format.
+    
   - verbose (bool, optional):
       A boolean variable to indicate whether showing logs or not (default is `True`).
         Example: When setting to production, it's strongly recommended in order to keep track of everything.
     
-  Returns:
+  RETURNS:
+  
   - Tuple[pd.core.frame.DataFrame]:
     A tuple containing two Pandas DataFrames:
         - The accelerometer data in the first DataFrame.
         - The gyroscope data in the second DataFrame.
         
-  Notes:
+  NOTES:
+  
   - Accelerometer x Gyroscope
     These are the two frequency of measurements.
     
@@ -211,7 +223,8 @@ def axis_plots(
   '''
   Generates subplots from a DataFrame with both a group and subgroup defined and saves them in a specific path.
   
-  Parameters:
+  PARAMETERS:
+  
   - df (pd.core.frame.DataFrane, required):
     A Pandas DataFrame to extract the features to plot with.
     
@@ -237,6 +250,11 @@ def axis_plots(
   - color_pallete (str, optional):
     A string containing the color palette to use (default is `viridis_r`).
       Example: `rocket_r`.
+      
+  RETURNS:
+  
+  - None:
+    Nothing is returned.
   '''
   
   try:
