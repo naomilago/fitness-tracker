@@ -10,4 +10,4 @@ df = pd.read_pickle('/workspaces/fitness-tracker/data/interim/01_processed_data.
 # Generating and loading the subplots on X, Y, Z axis
 # - For each participant within each label
 
-axis_plots(df=df, group='participant', subgroup='label', color_palette='dark', show=False, verbose=True)  
+axis_plotter(df=df, group='participant', subgroup='label', color_palette='dark', show=False, verbose=True)  
